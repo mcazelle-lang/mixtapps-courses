@@ -1,0 +1,15 @@
+{
+  "name": "mixtapps-courses",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Ta liste de courses rangée par rayon : ajoute, coche dans les allées, vide le panier en un clic et copie la liste pour l’envoyer à qui tu veux.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
+  }
+}

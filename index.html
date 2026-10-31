@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liste de courses</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+<style>
+  :root { --encre: #2b2118; --orange: #f97316; --jaune: #ffd43b; --fond: #fff8e1; --doux: #5f5140; --ombre: 4px 4px 0 var(--encre); }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--encre); line-height: 1.45;
+    background-color: var(--fond); background-image: radial-gradient(#f6d77a 1.2px, transparent 1.2px); background-size: 22px 22px; min-height: 100vh; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid #1c7ed6; outline-offset: 3px; }
+  [hidden] { display: none !important; }
+  .conteneur { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+  .entete { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .entete h1 { margin: 0; font-size: clamp(1.6rem, 7vw, 2.2rem); font-weight: 900; letter-spacing: -.02em; transform: rotate(-1.5deg); }
+  .entete h1 span { background: var(--jaune); padding: 0 .4rem; border: 3px solid var(--encre); border-radius: 12px; box-shadow: var(--ombre); display: inline-block; }
+  .compteur { margin: 0; font-weight: 800; background: #fff; border: 2px solid var(--encre); border-radius: 999px; padding: .25rem .8rem; }
+  .carte { background: #fff; border: 3px solid var(--encre); border-radius: 20px; box-shadow: var(--ombre); padding: 1rem; }
+  #form-article { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+  @media (min-width: 560px) { #form-article { grid-template-columns: 2fr 1fr 1.5fr auto; align-items: end; } }
+  .champ label { display: block; font-weight: 800; font-size: .9rem; margin-bottom: .25rem; }
+  .champ input, .champ select { width: 100%; padding: .6rem .7rem; border: 2px solid var(--encre); border-radius: 12px; background: #fffdf5; }
+  .btn { border: 3px solid var(--encre); border-radius: 14px; padding: .6rem 1rem; font-weight: 900; cursor: pointer; background: #fff; box-shadow: 3px 3px 0 var(--encre); transition: transform .08s, box-shadow .08s; }
+  .btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--encre); }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--encre); }
+  .btn-ajouter { background: var(--orange); }
+  .btn-jaune { background: var(--jaune); }
+  .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0 .5rem; }
+  .message { min-height: 1.5em; font-weight: 800; margin: 0 0 .75rem; }
+  .repli label { font-weight: 800; display: block; margin-bottom: .35rem; }
+  .repli textarea { width: 100%; border: 2px solid var(--encre); border-radius: 12px; padding: .6rem; background: #fffdf5; }
+  #liste-rayons { display: flex; flex-direction: column; gap: 1rem; }
+  .rayon { border: 3px solid var(--encre); border-radius: 20px; background: var(--couleur, #fff); box-shadow: var(--ombre); overflow: hidden; }
+  .rayon h2 { margin: 0; padding: .6rem 1rem; font-size: 1.05rem; font-weight: 900; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--encre); }
+  .rayon h2 small { font-size: .85rem; background: #fff; border: 2px solid var(--encre); border-radius: 999px; padding: 0 .55rem; }
+  .rayon ul { list-style: none; margin: 0; padding: .35rem; background: #fff; }
+  .article { display: flex; align-items: center; gap: .6rem; padding: .45rem .5rem; border-radius: 12px; }
+  .article + .article { border-top: 2px dashed #eadfc8; }
+  .article input[type=checkbox] { width: 1.4rem; height: 1.4rem; accent-color: var(--orange); flex: none; cursor: pointer; }
+  .article label { flex: 1; display: flex; flex-wrap: wrap; gap: .1rem .5rem; align-items: baseline; cursor: pointer; overflow-wrap: anywhere; }
+  .article-nom { font-weight: 800; }
+  .article-qte { font-size: .85rem; color: var(--doux); }
+  .article.coche .article-nom { text-decoration: line-through 3px var(--orange); color: var(--doux); }
+  .btn-suppr { border: 2px solid transparent; background: transparent; border-radius: 10px; width: 2.2rem; height: 2.2rem; cursor: pointer; font-weight: 900; color: var(--doux); flex: none; }
+  .btn-suppr:hover { border-color: var(--encre); background: #ffe3e3; color: var(--encre); }
+  .vide { text-align: center; font-weight: 800; padding: 2rem 1rem; background: #fff; border: 3px dashed var(--encre); border-radius: 20px; margin: 0; }
+  .pied { text-align: center; font-size: .85rem; color: var(--doux); margin-top: 2rem; font-weight: 700; }
+  @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div class="conteneur">
+  <header class="entete">
+    <h1><span>🛒 Mes courses</span></h1>
+    <p id="compteur-articles" class="compteur" aria-live="polite">0 article</p>
+  </header>
+
+  <main>
+    <form id="form-article" class="carte" novalidate>
+      <div class="champ">
+        <label for="article-nom">Article</label>
+        <input type="text" id="article-nom" maxlength="80" placeholder="Ex. : tomates" autocomplete="off" required>
+      </div>
+      <div class="champ">
+        <label for="article-quantite">Quantité</label>
+        <input type="text" id="article-quantite" maxlength="20" value="1" autocomplete="off">
+      </div>
+      <div class="champ">
+        <label for="article-rayon">Rayon</label>
+        <select id="article-rayon"></select>
+      </div>
+      <button type="submit" id="btn-ajouter" class="btn btn-ajouter">Ajouter</button>
+    </form>
+
+    <div class="actions">
+      <button type="button" id="btn-retirer-coches" class="btn">🧹 Retirer les articles cochés</button>
+      <button type="button" id="btn-copier-liste" class="btn btn-jaune">📋 Copier la liste</button>
+    </div>
+    <p id="message" class="message" role="status"></p>
+    <div id="repli-copie" class="repli carte" hidden>
+      <label for="texte-repli">Ton navigateur bloque la copie : sélectionne ce texte et copie-le à la main.</label>
+      <textarea id="texte-repli" rows="8" readonly></textarea>
+    </div>
+
+    <div id="liste-rayons" role="region" aria-label="Ta liste, rangée par rayon"></div>
+    <p id="liste-vide" class="vide">Ta liste est vide. Ajoute ton premier article ! 🥕</p>
+  </main>
+  <p class="pied">Liste de courses · par Inès Moreau</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const CLE = 'courses:v1';
+  const RAYONS = [
+    { id: 'fruits-legumes', nom: 'Fruits & légumes', emoji: '🥕', couleur: '#b2f2bb' },
+    { id: 'frais', nom: 'Frais', emoji: '🧀', couleur: '#a5d8ff' },
+    { id: 'epicerie', nom: 'Épicerie', emoji: '🥫', couleur: '#ffec99' },
+    { id: 'boissons', nom: 'Boissons', emoji: '🧃', couleur: '#ffc9c9' },
+    { id: 'maison', nom: 'Maison', emoji: '🧽', couleur: '#d0bfff' },
+    { id: 'autre', nom: 'Autre', emoji: '📦', couleur: '#e9ecef' }
+  ];
+  const $ = (sel) => document.querySelector(sel);
+  const el = {
+    form: $('#form-article'), nom: $('#article-nom'), qte: $('#article-quantite'), rayon: $('#article-rayon'),
+    liste: $('#liste-rayons'), vide: $('#liste-vide'), compteur: $('#compteur-articles'), message: $('#message'),
+    repli: $('#repli-copie'), texteRepli: $('#texte-repli')
+  };
+
+  // --- Stockage local protégé ---
+  let etat = { articles: [], dernierRayon: 'fruits-legumes' };
+  try {
+    const d = JSON.parse(localStorage.getItem(CLE));
+    if (d && Array.isArray(d.articles)) {
+      etat.articles = d.articles.filter((a) => a && typeof a.id === 'string' && typeof a.nom === 'string' && RAYONS.some((r) => r.id === a.rayon))
+        .map((a) => ({ id: a.id, nom: a.nom, quantite: String(a.quantite || ''), rayon: a.rayon, coche: !!a.coche }));
+      if (RAYONS.some((r) => r.id === d.dernierRayon)) etat.dernierRayon = d.dernierRayon;
+    }
+  } catch (e) { /* stockage indisponible */ }
+  function sauvegarder() {
+    try { localStorage.setItem(CLE, JSON.stringify(etat)); }
+    catch (e) { el.message.textContent = '⚠️ Impossible d’enregistrer : ta liste sera perdue en fermant la page.'; }
+  }
+
+  function nouvelId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function quantiteLisible(q) { return /^\d+$/.test(q) ? '× ' + q : q; }
+
+  // Remplit la liste déroulante des rayons
+  RAYONS.forEach((r) => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.emoji + ' ' + r.nom;
+    el.rayon.append(opt);
+  });
+  el.rayon.value = etat.dernierRayon;
+
+  // --- Affichage regroupé par rayon (textContent pour tout texte saisi) ---
+  function afficher() {
+    el.liste.replaceChildren();
+    RAYONS.forEach((r) => {
+      const articles = etat.articles.filter((a) => a.rayon === r.id).sort((a, b) => Number(a.coche) - Number(b.coche));
+      if (!articles.length) return;
+      const section = document.createElement('section');
+      section.className = 'rayon';
+      section.dataset.rayon = r.id;
+      section.style.setProperty('--couleur', r.couleur);
+      const titre = document.createElement('h2');
+      titre.textContent = r.emoji + ' ' + r.nom + ' ';
+      const nb = document.createElement('small');
+      nb.textContent = articles.filter((a) => !a.coche).length + ' / ' + articles.length;
+      titre.append(nb);
+      const ul = document.createElement('ul');
+      articles.forEach((a) => {
+        const li = document.createElement('li');
+        li.className = 'article' + (a.coche ? ' coche' : '');
+        li.dataset.id = a.id;
+        const caseACocher = document.createElement('input');
+        caseACocher.type = 'checkbox';
+        caseACocher.id = 'article-' + a.id;
+        caseACocher.checked = a.coche;
+        caseACocher.className = 'case-article';
+        const label = document.createElement('label');
+        label.htmlFor = caseACocher.id;
+        const nom = document.createElement('span');
+        nom.className = 'article-nom';
+        nom.textContent = a.nom;
+        label.append(nom);
+        if (a.quantite) {
+          const qte = document.createElement('span');
+          qte.className = 'article-qte';
+          qte.textContent = quantiteLisible(a.quantite);
+          label.append(qte);
+        }
+        const suppr = document.createElement('button');
+        suppr.type = 'button';
+        suppr.className = 'btn-suppr';
+        suppr.textContent = '✕';
+        suppr.setAttribute('aria-label', 'Supprimer ' + a.nom);
+        li.append(caseACocher, label, suppr);
+        ul.append(li);
+      });
+      section.append(titre, ul);
+      el.liste.append(section);
+    });
+    const total = etat.articles.length;
+    const restants = etat.articles.filter((a) => !a.coche).length;
+    el.vide.hidden = total > 0;
+    el.compteur.textContent = total === 0 ? '0 article' : (total - restants) + ' / ' + total + ' dans le panier';
+  }
+
+  // --- Actions ---
+  el.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nom = el.nom.value.trim();
+    if (!nom) { el.message.textContent = 'Écris le nom d’un article d’abord 😉'; el.nom.focus(); return; }
+    const article = { id: nouvelId(), nom, quantite: el.qte.value.trim(), rayon: el.rayon.value, coche: false };
+    etat.articles.push(article);
+    etat.dernierRayon = article.rayon;
+    sauvegarder();
+    afficher();
+    el.message.textContent = '« ' + nom + ' » ajouté au rayon ' + RAYONS.find((r) => r.id === article.rayon).nom + ' !';
+    el.nom.value = '';
+    el.qte.value = '1';
+    el.nom.focus();
+  });
+
+  el.liste.addEventListener('change', (e) => {
+    if (!e.target.classList.contains('case-article')) return;
+    const id = e.target.closest('.article').dataset.id;
+    const article = etat.articles.find((a) => a.id === id);
+    if (!article) return;
+    article.coche = e.target.checked;
+    sauvegarder();
+    afficher();
+    const caseActive = document.getElementById('article-' + id);
+    if (caseActive) caseActive.focus(); // l'article a pu changer de place : on garde le focus
+  });
+
+  el.liste.addEventListener('click', (e) => {
+    const bouton = e.target.closest('.btn-suppr');
+    if (!bouton) return;
+    const id = bouton.closest('.article').dataset.id;
+    const article = etat.articles.find((a) => a.id === id);
+    etat.articles = etat.articles.filter((a) => a.id !== id);
+    sauvegarder();
+    afficher();
+    el.message.textContent = article ? '« ' + article.nom + ' » supprimé.' : '';
+    el.nom.focus();
+  });
+
+  $('#btn-retirer-coches').addEventListener('click', () => {
+    const avant = etat.articles.length;
+    etat.articles = etat.articles.filter((a) => !a.coche);
+    const retires = avant - etat.articles.length;
+    sauvegarder();
+    afficher();
+    el.message.textContent = retires ? retires + ' article' + (retires > 1 ? 's retirés' : ' retiré') + ' de la liste. 🧹' : 'Aucun article coché pour l’instant.';
+  });
+
+  // --- Copie en texte, avec repli si le presse-papiers est refusé ---
+  function listeEnTexte() {
+    const lignes = ['🛒 Liste de courses'];
+    RAYONS.forEach((r) => {
+      const articles = etat.articles.filter((a) => a.rayon === r.id);
+      if (!articles.length) return;
+      lignes.push('', r.nom.toUpperCase());
+      articles.forEach((a) => lignes.push((a.coche ? '✓ ' : '• ') + a.nom + (a.quantite ? ' (' + quantiteLisible(a.quantite) + ')' : '')));
+    });
+    return lignes.join('\n');
+  }
+  async function copierTexte(texte) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(texte); return true; }
+    } catch (e) { /* refusé : on tente le repli */ }
+    try {
+      const zone = document.createElement('textarea');
+      zone.value = texte;
+      zone.setAttribute('readonly', '');
+      zone.style.position = 'fixed';
+      zone.style.opacity = '0';
+      document.body.append(zone);
+      zone.select();
+      const ok = document.execCommand('copy');
+      zone.remove();
+      return ok;
+    } catch (e) { return false; }
+  }
+  $('#btn-copier-liste').addEventListener('click', async () => {
+    if (!etat.articles.length) { el.message.textContent = 'Rien à copier : ta liste est vide.'; return; }
+    const texte = listeEnTexte();
+    el.repli.hidden = true;
+    if (await copierTexte(texte)) {
+      el.message.textContent = 'Liste copiée ! Colle-la où tu veux 📋';
+    } else {
+      el.message.textContent = 'Copie automatique refusée.';
+      el.texteRepli.value = texte;
+      el.repli.hidden = false;
+      el.texteRepli.focus();
+      el.texteRepli.select();
+    }
+  });
+
+  afficher();
+})();
+</script>
+<script src="https://appmixtape.web.app/remix.js" data-app="wZxy6H3vezZkUrcpdCkwZVroWxK2/OUExwuJUQK6ZI2FAwmay" defer></script>
+</body>
+</html>
